@@ -13,5 +13,5 @@ jobs:
       build: >-
         git submodule update --init --recursive &&
         python3 -m pip install fonttools &&
-        ./build.sh --release "${GITHUB_REF_NAME#v}"
+        sh ./build.sh --release "${GITHUB_REF_NAME#v}"
       packages: build/*.fwsc
