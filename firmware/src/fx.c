@@ -2,10 +2,11 @@
  * Copyright (C) 2026 Leo Kuroshita (@kurogedelic), Hügelton Instruments */
 /* Effects: per-track DIST insert, then sends into three shared buses (chorus, tempo delay, reverb).
  * Stereo dry mix; the chorus and the reverb come back in stereo, the delay in the middle. */
-#if CLIPPER_SYNTH                /* Clipper: the line at half the rate (22.05 kHz, its repeats are low-passed anyway):
-                                  * the same 1.49 s in half the memory (64 KB for the wavetables) */
+#if CLIPPER_SYNTH                /* Clipper: the line at a reduced rate (its repeats are low-passed anyway; Clipper 1.0: half,
+                                  * 1.49 s in 64 KB; RAIN: a quarter, 11.025 kHz, 2.97 s in the same 64 KB, darker repeats) */
 #define DLY_LEN 32768u
-#define DLY_SPAN (2u * DLY_LEN)  /* samples the line holds */
+#define DLY_SH 2u                /* (RAIN) a line entry per 4 samples (11.025 kHz): 2.97 s in the same 64 KB (was 1: 1.49 s) */
+#define DLY_SPAN (DLY_LEN << DLY_SH)   /* samples the line holds */
 #else
 #define DLY_LEN 65536u           /* 1.49 s: 1/4 down to 41 BPM, 1/8 dotted down to 31 (clamped below) */
 #define DLY_SPAN DLY_LEN
@@ -414,10 +415,10 @@ static void plate_run(const int32_t *rev_in, int32_t *wet_l, int32_t *wet_r, uin
 #endif
 
 #if CLIPPER_SYNTH
-/* (1.0) the half-rate line read q (Q8) samples back: entry e ~ sample 2e, linear between entries */
+/* (1.0) the reduced-rate line read q (Q8) samples back: entry e ~ sample e << DLY_SH, linear between entries */
 static inline int32_t dly_rd(uint32_t q)
 {
-    uint32_t s = (fx.dly_w << 8) - q, e = s >> 9, fr = (s >> 1) & 255u;
+    uint32_t s = (fx.dly_w << 8) - q, e = s >> (8u + DLY_SH), fr = (s >> DLY_SH) & 255u;
     int32_t a = dly_buf[e & (DLY_LEN - 1u)], b = dly_buf[(e + 1u) & (DLY_LEN - 1u)];
     return a + (((b - a) * (int32_t)fr) >> 8);
 }
@@ -436,9 +437,9 @@ static inline void dly_taps(uint32_t m, uint32_t d, uint32_t i, int32_t *l, int3
             q = (DLY_SPAN - 4u) << 8;
         *l = *r = *f = dly_rd(q);
     } else {
-        uint32_t p = fx.dly_w - d, e = p >> 1;
+        uint32_t p = fx.dly_w - d, e = p >> DLY_SH, fr = p & ((1u << DLY_SH) - 1u);
         int32_t a = dly_buf[e & (DLY_LEN - 1u)];
-        *l = *r = *f = (p & 1u) ? (a + dly_buf[(e + 1u) & (DLY_LEN - 1u)]) >> 1 : a;
+        *l = *r = *f = fr ? a + (((dly_buf[(e + 1u) & (DLY_LEN - 1u)] - a) * (int32_t)fr) >> DLY_SH) : a;
     }
 }
 #define TW_INC 1558299u                 /* (a block's turn: 0.5 Hz, the wow) */
@@ -569,10 +570,11 @@ static void fx_buses(const int32_t *cho_in, const int32_t *dly_in, const int32_t
             v = (dly_in[i] >> 1) + mulq15(fx.dly_lp, fb);
             if (m == DM_TAPE)
                 v = softclip(v);                        /* (a tape's: the repeats round off as they pile up) */
-            if (fx.dly_w & 1u)
-                dly_buf[(fx.dly_w >> 1) & (DLY_LEN - 1u)] = (int16_t)clamp((fx.dly_acc + v) >> 1, -32768, 32767);
-            else
-                fx.dly_acc = v;
+            fx.dly_acc += v;                            /* (RAIN) 1 << DLY_SH samples averaged into an entry */
+            if ((fx.dly_w & ((1u << DLY_SH) - 1u)) == (1u << DLY_SH) - 1u) {
+                dly_buf[(fx.dly_w >> DLY_SH) & (DLY_LEN - 1u)] = (int16_t)clamp(fx.dly_acc >> DLY_SH, -32768, 32767);
+                fx.dly_acc = 0;
+            }
             fx.dly_w++;
             yl += mulq15(xl << 1, dmix);
             yr += mulq15(xr << 1, dmix);

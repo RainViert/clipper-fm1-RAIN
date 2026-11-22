@@ -9,7 +9,7 @@ static const char *const N_MOUT[] = {"KEYS", "SEQ"};
 static const char *const N_MIN[] = {"NOTES", "CLOCK"};  /* G_ROUTE: MIDI in, notes and clock, or the clock only (seq.c) */    /* G_MIDI: what goes to MIDI OUT (seq.c seq_out_on) */
 static const char *const N_DIV[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T"};
 static const char *const N_SDIV[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/2", "1BAR", "2BAR"};   /* core.h div_units */
-static const char *const N_DLY[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/8D", "1/16D", "1/2", "1/2D", "1/1"};   /* (RAIN: + 1/2, 1/2D, 1/1; the line holds 1.49 s) */          /* core.h dly_units */
+static const char *const N_DLY[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/8D", "1/16D", "1/2", "1/2D", "1/1"};   /* (RAIN: + 1/2, 1/2D, 1/1; the line holds 2.97 s) */          /* core.h dly_units */
 static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", "MPEN", "HARM",
                                     "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH"};
 static const char *const N_ONOFF[] = {"OFF", "ON"};
