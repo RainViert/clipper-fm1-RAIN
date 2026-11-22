@@ -517,6 +517,8 @@ static uint32_t div_units(uint32_t div)
 /* the delay's TIME in clock units (N_DLY order) */
 static uint32_t dly_units(uint32_t d)
 {
+    if (d >= 8u)                 /* (RAIN) 1/2, 1/2D, 1/1 (the line's length clamps them: fx.c dly_len) */
+        return BEAT_U * (d == 8u ? 2u : d == 9u ? 3u : 4u);
     return d < NDIV_SHORT ? BEAT_U / DIV_DEN[d] : d == NDIV_SHORT ? BEAT_U * 3u / 4u : BEAT_U * 3u / 8u;
 }
 /* length of one step (N_SDIV order) in samples at the song tempo (rounded down) */

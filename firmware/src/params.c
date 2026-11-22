@@ -9,7 +9,7 @@ static const char *const N_MOUT[] = {"KEYS", "SEQ"};
 static const char *const N_MIN[] = {"NOTES", "CLOCK"};  /* G_ROUTE: MIDI in, notes and clock, or the clock only (seq.c) */    /* G_MIDI: what goes to MIDI OUT (seq.c seq_out_on) */
 static const char *const N_DIV[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T"};
 static const char *const N_SDIV[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/2", "1BAR", "2BAR"};   /* core.h div_units */
-static const char *const N_DLY[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/8D", "1/16D"};          /* core.h dly_units */
+static const char *const N_DLY[] = {"1/4", "1/8", "1/16", "1/32", "8T", "16T", "1/8D", "1/16D", "1/2", "1/2D", "1/1"};   /* (RAIN: + 1/2, 1/2D, 1/1; the line holds 1.49 s) */          /* core.h dly_units */
 static const char *const N_SCALE[] = {"CHR", "MAJ", "MIN", "DOR", "MIX", "PEN", "MPEN", "HARM",
                                     "PHRY", "LYD", "LOC", "MEL", "BLUES", "WHOLE", "DIMHW", "DIMWH"};
 static const char *const N_ONOFF[] = {"OFF", "ON"};
@@ -359,9 +359,10 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         break;
     case F_TIME: {
 #if CLIPPER_SYNTH
-        uint32_t ms10 = (d == &TP[P_REL] || d == &TP[P_E2REL] ? REL_MS_X10 : TIME_MS_X10)[v & 127];   /* (RAIN: REL to 30 s) */
+        uint32_t ms10 = (d == &TP[P_ATK] || d == &TP[P_DEC] || d == &TP[P_REL] || d == &TP[P_E2ATK] || d == &TP[P_E2DEC] || d == &TP[P_E2REL]
+                         ? REL_MS_X10 : TIME_MS_X10)[v & 127];   /* (RAIN: ATK, DEC, REL to 30 s) */
 #else
-        uint32_t ms10 = (d == &TP[P_REL] ? REL_MS_X10 : TIME_MS_X10)[v & 127];
+        uint32_t ms10 = (d == &TP[P_ATK] || d == &TP[P_DEC] || d == &TP[P_REL] ? REL_MS_X10 : TIME_MS_X10)[v & 127];
 #endif
         if (ms10 < 100u) {
             fmt_fix(val, (int32_t)ms10, 1);

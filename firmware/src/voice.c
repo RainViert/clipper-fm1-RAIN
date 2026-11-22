@@ -950,14 +950,14 @@ static int32_t env_tick(track_t *t, voice_t *v)
     int32_t sus = (int32_t)p[P_SUS] << 17;              /* Q24 */
     switch (v->stage) {
     case 1:
-        v->env += (int32_t)ENV_LIN[p[P_ATK] & 127];
+        v->env += (int32_t)REL_LIN[p[P_ATK] & 127];
         if (v->env >= (1 << 24)) {
             v->env = 1 << 24;
             v->stage = 2;
         }
         break;
     case 2:
-        v->env += mulq16(sus - v->env, ENV_EXP[p[P_DEC] & 127]);
+        v->env += mulq16(sus - v->env, REL_EXP[p[P_DEC] & 127]);
         break;
     case 3:
         v->env -= mulq16(v->env, REL_EXP[p[P_REL] & 127]);
@@ -993,14 +993,14 @@ static int32_t env2_tick(const int16_t *p, voice_t *v)
         v->e2st = 3;
     switch (v->e2st) {
     case 1:
-        v->env2 += (int32_t)ENV_LIN[p[P_E2ATK] & 127];
+        v->env2 += (int32_t)REL_LIN[p[P_E2ATK] & 127];
         if (v->env2 >= (1 << 24)) {
             v->env2 = 1 << 24;
             v->e2st = 2;
         }
         break;
     case 2:
-        v->env2 += mulq16(((int32_t)p[P_E2SUS] << 17) - v->env2, ENV_EXP[p[P_E2DEC] & 127]);
+        v->env2 += mulq16(((int32_t)p[P_E2SUS] << 17) - v->env2, REL_EXP[p[P_E2DEC] & 127]);
         if (p[P_E2LOOP] && v->env2 - ((int32_t)p[P_E2SUS] << 17) < (1 << 18))
             v->e2st = 1;                                /* (1.0) LOOP: close to the sustain, the attack again (from
                                                          * there: no jump), until the note is let go */
