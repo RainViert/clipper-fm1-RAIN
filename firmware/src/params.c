@@ -358,7 +358,11 @@ static void param_format(const param_desc_t *d, int32_t v, char *val, const char
         *unit = "%";
         break;
     case F_TIME: {
-        uint32_t ms10 = TIME_MS_X10[v & 127];
+#if CLIPPER_SYNTH
+        uint32_t ms10 = (d == &TP[P_REL] || d == &TP[P_E2REL] ? REL_MS_X10 : TIME_MS_X10)[v & 127];   /* (RAIN: REL to 30 s) */
+#else
+        uint32_t ms10 = (d == &TP[P_REL] ? REL_MS_X10 : TIME_MS_X10)[v & 127];
+#endif
         if (ms10 < 100u) {
             fmt_fix(val, (int32_t)ms10, 1);
             *unit = "ms";

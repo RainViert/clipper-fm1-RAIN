@@ -1409,7 +1409,8 @@ function fmtValue(d, v) {
     case F.FILT: return !v ? ["OFF", ""] : v < 0 ? ["LP" + Math.trunc((-v * 100 + 32) / 64), "%"] : ["HP" + Math.trunc((v * 100 + 31) / 63), "%"];
     case F.BIPCT: return [sign(Math.trunc(v * 100 / 64)), "%"];
     case F.TIME: {
-      const ms10 = Math.round(10 * Math.pow(10000, (v & 127) / 127));
+      const t = (x) => Math.pow(10000, x / 127), vv = v & 127;   /* (RAIN: REL to 30 s past 115, as gen_tables.py) */
+      const ms10 = Math.round(10 * (d.label === "REL" && vv > 115 ? t(115) * Math.pow(30000 / t(115), (vv - 115) / 12) : t(vv)));
       if (ms10 < 100) return [(ms10 / 10).toFixed(1), "ms"];
       if (ms10 < 10000) return [String(Math.round(ms10 / 10)), "ms"];
       return [(ms10 / 10000).toFixed(2), "s"];

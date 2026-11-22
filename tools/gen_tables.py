@@ -53,6 +53,10 @@ def main(path):
         tau = m / 1000 / 4.6                       # ~99 % of the way after "m" ms
         exp_k.append(max(1, min(65535, int(65536 * (1 - math.exp(-CTL / (tau * FS)))))))
     L += arr("ENV_EXP", "uint16_t", exp_k)
+    # (RAIN) the release (ENV and ENV 2 REL): as the times up to 115 (4.2 s), then on to 30 s at 127
+    rel = [m if v <= 115 else ms[115] * (30000 / ms[115]) ** ((v - 115) / 12) for v, m in enumerate(ms)]
+    L += arr("REL_MS_X10", "uint32_t", [int(round(m * 10)) for m in rel], 10)
+    L += arr("REL_EXP", "uint16_t", [max(1, min(65535, int(65536 * (1 - math.exp(-CTL / (m / 1000 / 4.6 * FS)))))) for m in rel])
     # LFO 0.05 .. 40 Hz, phase increment per control tick
     hz = [0.05 * (800 ** (v / 127)) for v in range(128)]
     L += arr("LFO_HZ_X100", "uint32_t", [int(round(h * 100)) for h in hz], 10)

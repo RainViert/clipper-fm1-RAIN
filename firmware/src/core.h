@@ -243,6 +243,7 @@ typedef struct {
     int16_t l3rnd;               /* .. its S&H value */
     int16_t vdrift, vdtgt;       /* (0.9) VINTAGE: the voice's slow pitch drift now, and where it goes (Q15) */
     uint8_t ch;                  /* the MIDI channel its note came on (MPE: its own bend, pressure, slide) */
+    int16_t mslide, mpress;      /* MPE: its slide (CC 74 - 64) and pressure, smoothed, << 8 (voice.c mpe_smooth) */
 #endif
 } voice_t;
 

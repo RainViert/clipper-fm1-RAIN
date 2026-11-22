@@ -64,6 +64,19 @@ static int16_t mpe_bend[16];                            /* per channel: Q15, as 
 static uint8_t mpe_press[16];                           /* 0..127 */
 static int8_t mpe_slide[16];                            /* CC 74 - 64: 0 at rest */
 static uint8_t mpe_cur_ch;                              /* the channel of the note being started (seq.c), 0 = none */
+/* MPE: a voice's slide and pressure follow their channel through a one-pole (1/4 a control tick: about 3 ms at
+ * 44.1 kHz), so the 7-bit steps of CC 74 and channel pressure no longer jump the filter (zipper). A new note starts
+ * at its channel's values (mpe_seed): no sweep from 0. */
+static void mpe_seed(voice_t *v)
+{
+    v->mslide = (int16_t)(mpe_slide[v->ch & 15u] * 256);
+    v->mpress = (int16_t)(mpe_press[v->ch & 15u] * 256);
+}
+static void mpe_smooth(voice_t *v)
+{
+    v->mslide = (int16_t)(v->mslide + ((mpe_slide[v->ch & 15u] * 256 - v->mslide) >> 2));
+    v->mpress = (int16_t)(v->mpress + (((int32_t)mpe_press[v->ch & 15u] * 256 - v->mpress) >> 2));
+}
 static void mpe_reset(void)
 {
     uint32_t i;
@@ -364,6 +377,7 @@ static void voice_start(track_t *t, voice_t *v, uint32_t note, uint32_t vel, int
         v->l2rnd = (int16_t)(seed >> 16);
         v->l3rnd = v->l2rnd;
         v->ch = mpe_cur_ch;
+        mpe_seed(v);
     }
 #endif
     e->note_on(t, v);
@@ -478,6 +492,7 @@ static void mono_play(track_t *t, uint32_t note, uint32_t vel, int retrig, int g
             v->note = (uint8_t)note;
 #if CLIPPER_SYNTH
             v->ch = mpe_cur_ch;                             /* (MPE: the new note's channel) */
+            mpe_seed(v);
 #endif
             v->pitch16 = (int32_t)note * 16;
             if (vel > v->vel && nv == 1u)
@@ -945,7 +960,7 @@ static int32_t env_tick(track_t *t, voice_t *v)
         v->env += mulq16(sus - v->env, ENV_EXP[p[P_DEC] & 127]);
         break;
     case 3:
-        v->env -= mulq16(v->env, ENV_EXP[p[P_REL] & 127]);
+        v->env -= mulq16(v->env, REL_EXP[p[P_REL] & 127]);
         if (v->env < (1 << 12)) {
             v->env = 0;
             v->stage = 0;
@@ -991,7 +1006,7 @@ static int32_t env2_tick(const int16_t *p, voice_t *v)
                                                          * there: no jump), until the note is let go */
         break;
     case 3:
-        v->env2 -= mulq16(v->env2, ENV_EXP[p[P_E2REL] & 127]);
+        v->env2 -= mulq16(v->env2, REL_EXP[p[P_E2REL] & 127]);
         if (v->env2 < (1 << 12)) {
             v->env2 = 0;
             v->e2st = 0;
@@ -1396,8 +1411,10 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
             continue;
 #if CLIPPER_SYNTH
         mpe = mpe_mode && v->ch;                        /* MPE: the note's own channel */
-        if (mpe)
-            v->pat = mpe_press[v->ch & 15u];            /* (its pressure: the voice's aftertouch) */
+        if (mpe) {
+            mpe_smooth(v);                              /* (its slide and pressure, smoothed) */
+            v->pat = (uint8_t)(v->mpress >> 8);         /* (its pressure: the voice's aftertouch) */
+        }
 #endif
         {
             env = env_tick(t, v);
@@ -1423,9 +1440,10 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
                 sv[MS_ENV2] = mx.srcs & (1u << MS_ENV2) ? env2_tick(p, v) : 0;
                 sv[MS_VEL] = v->vel * 258;
                 sv[MS_KEY] = clamp(((int32_t)v->note - 60) * 512, -32768, 32767);
-                sv[MS_AT] = (int32_t)(v->pat > catr ? v->pat : catr) * 258;
+                sv[MS_AT] = mpe && v->mpress > catr * 256 ? (int32_t)v->mpress * 258 >> 8   /* (MPE: the smoothed pressure) */
+                                                           : (int32_t)(v->pat > catr ? v->pat : catr) * 258;
                 sv[MS_RAND] = v->rnd;
-                sv[MS_SLIDE] = mpe ? mpe_slide[v->ch & 15u] * 512 : 0;
+                sv[MS_SLIDE] = mpe ? v->mslide * 2 : 0;
                 if (p[P_L2MODE] == L2_KEY) {            /* LFO 2 KEY: the note's own, from its start */
                     uint32_t old = v->l2ph;
                     sv[MS_LFO2] = 0;
@@ -1569,7 +1587,7 @@ static uint32_t track_render(track_t *t, int32_t *out, uint32_t n)
             if (mshp)
                 m.shape = clamp(m.shape + clamp(mshp, -32767, 32767), 0, 127 << 8);
             if (mpe && !(mx.srcs & (1u << MS_SLIDE)))  /* MPE: SLIDE to the cutoff when no slot takes it */
-                m.cutoff += mpe_slide[v->ch & 15u] * 200;   /* (+-64: about +-3 octaves) */
+                m.cutoff += (v->mslide * 200) >> 8;         /* (+-64: about +-3 octaves; smoothed) */
         }
         if (medm && split) {                            /* (0.7) after the wait: they write the part's values */
             uint32_t k;
