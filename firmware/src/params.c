@@ -578,10 +578,9 @@ static const page_t PAGES[] = {
 #endif
     {"PRESETS", FAM_SAVE, SC_GLOBAL, GR_BROWSE, {0xFF, 0xFF, 0xFF, 0xFF}},   /* browser: PRESETS knob / KNOB 1 */
     {"USER", FAM_SAVE, SC_GLOBAL, GR_USER, {0xFF, 0xFF, 0xFF, 0xFF}},       /* user presets: SLOT LOAD ERASE SAVE */
-#if !CLIPPER_SYNTH                                   /* (Clipper 1.0: no projects on the FM-1: one instrument, kept by
-                                                     * the autosave; the sounds by the user presets) */
+    /* (Clipper 1.0 hid it: one instrument, kept by the autosave. RAIN: back, four slots for whole setups:
+     * both sounds, LAYER / SPLIT / MULTI, the effects, the tempo, as the autosave keeps them) */
     {"PROJECT", FAM_SAVE, SC_GLOBAL, GR_SLOTS, {G_SLOT, 0xFF, G_LOAD, G_SAVE}},
-#endif
     {"TOOLS", FAM_SAVE, SC_GLOBAL, GR_NONE, {G_CLRSEQ, G_INITSND, 0xFF, G_NEWPRJ}},
     {"ARP", FAM_ARP, SC_TRACK, GR_ARP, {P_AMODE, P_ARATE, P_AOCT, P_AGATE}},
     {"ARP 2", FAM_ARP, SC_TRACK, GR_NONE, {P_ASWING, P_APROB, P_AHOLD, P_AORDER}},
