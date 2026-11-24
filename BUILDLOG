@@ -1,0 +1,19 @@
+font S: ter-u16n.bdf 16px h 16, digit adv 8, 5376 B
+font L: ter-u16n.bdf 16px h 32, digit adv 16, the S bitmaps at 2x (0 B)
+icons: 86 of 86 (192x72 L), 3096 B
+tables: /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/gen/felucca_tables.h
+loader: image 8204 B at 0x1c0a800, bss end 0x1c0f3e0
+loader: ota.bin 6949 B
+generated waves into /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/genwav
+samples: 8 sets, 51 zones, 303054 B ADPCM
+drum kits: 32 synthesised -> /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/gen/felucca_drumkits.h
+fm6 patches: 8 -> /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/gen/felucca_fm6.h
+wavetables: 16 tables x 16 frames x 128 harmonics -> /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/gen/felucca_wavetables.h
+logo: splash 240x188, 5061 B RLE -> /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/gen/sloop_logo.h
+  ok    .ram_text: 925 insns, no calls
+  ok    .c1_text: 160 B, the second core's loop in RAM
+  ok    image 563684 B; RAM .data+.bss 74520 B of 98304; lowram 4352 B of 29384; pool 313528 B of 344064
+  ok    register access: hal/ only (src/, loader/ clean)
+app      /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/felucca.bin  563684 B
+loader   /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/loader/ota.bin  6949 B
+package  /home/runner/work/ClipperMPE_RAIN/ClipperMPE_RAIN/build/felucca-1.3-rain5.fwsc  610105 B, identity FM-1_913
