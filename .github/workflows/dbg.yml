@@ -1,0 +1,42 @@
+# (RAIN) a debug build: the FM-1 package of a tag's code with its disassembly and symbols, committed to branch dbg-out
+name: dbg
+on:
+  push:
+    branches: ['dbg-*']
+jobs:
+  dbg:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - run: python3 -m pip install Pillow
+      - run: sh tools/get_toolchain.sh
+      - run: |
+          for i in 1 2 3; do
+            git clone --depth 1 --branch AC79NN_SDK_V1.2.1_2023-12-13 \
+                https://gitee.com/Jieli-Tech/fw-AC79_AIoT_SDK.git ~/fw-AC79_AIoT_SDK && break
+            rm -rf ~/fw-AC79_AIoT_SDK
+            sleep 20
+          done
+      - name: build
+        run: |
+          V="$(cat DBG_VERSION)"
+          mkdir -p /tmp/out
+          sh build.sh --release "$V" 2>&1 | tee /tmp/out/BUILDLOG || true
+          mkdir -p /tmp/out
+          cp build/felucca.dis /tmp/out/ || true
+          cp build/*.fwsc /tmp/out/ || true
+          ls build > /tmp/out/LS
+      - name: commit to dbg-out
+        run: |
+          git config user.name dbg; git config user.email dbg@users.noreply.github.com
+          git checkout --orphan dbg-out-${GITHUB_REF_NAME}
+          git rm -rfq .
+          cp /tmp/out/* .
+          git add -A
+          git commit -qm "dbg ${GITHUB_REF_NAME}"
+          git push -f origin HEAD:refs/heads/dbg-out-${GITHUB_REF_NAME}
